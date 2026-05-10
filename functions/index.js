@@ -52,19 +52,27 @@ app.get("/api/trending/:region", async (req, res) => {
 
       return {
 
-        rank: index + 1,
+	  rank: index + 1,
 
-        title: title,
+	  id: video.id,
 
-        channel: video.snippet.channelTitle,
+	  title: title,
 
-        published: video.snippet.publishedAt,
+	  channel: video.snippet.channelTitle,
 
-        thumbnail: video.snippet.thumbnails.high.url,
+	  published: video.snippet.publishedAt,
 
-        viralScore: score
+	  thumbnail: video.snippet.thumbnails.high.url,
 
-      };
+	  views: parseInt(video.statistics.viewCount || 0),
+
+	  likes: parseInt(video.statistics.likeCount || 0),
+
+	  comments: parseInt(video.statistics.commentCount || 0),
+
+	  viralScore: score
+
+	};
 
     });
 
