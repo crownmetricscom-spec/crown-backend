@@ -40,8 +40,47 @@ app.get("/api/trending/:region", async (req, res) => {
 
 	const comments =
 	  parseInt(video.statistics.commentCount || 0);
+	  
+	const publishedDate =
+	  new Date(video.snippet.publishedAt);
+
+	const now = new Date();
+
+	const ageHours =
+	  (now - publishedDate) / 3600000;
 
 	let score = Math.floor(
+
+	  (
+
+		(
+		  likes +
+		  (comments * 2)
+		)
+
+		/
+
+		(views || 1)
+
+	  )
+
+	  *
+
+	  10000
+
+	  *
+
+	  (
+
+		ageHours < 24
+		  ? 1.5
+		  : ageHours < 72
+		  ? 1.2
+		  : 1
+
+	  )
+
+	);
 
   (
     (likes + (comments * 2))
