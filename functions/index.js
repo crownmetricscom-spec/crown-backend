@@ -48,6 +48,9 @@ app.get("/api/trending/:region", async (req, res) => {
 
 	const ageHours =
 	  (now - publishedDate) / 3600000;
+	
+	const velocity =
+		views / Math.max(ageHours, 1);
 
 	let score = Math.floor(
 
@@ -120,7 +123,8 @@ app.get("/api/trending/:region", async (req, res) => {
 
 	  comments: parseInt(video.statistics.commentCount || 0),
 
-	  viralScore: score
+	  viralScore: score,
+		velocity: Math.floor(velocity)
 
 	};
 
