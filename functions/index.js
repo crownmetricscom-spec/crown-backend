@@ -11,18 +11,63 @@ app.get("/api/test", (req, res) => {
 });
 
 app.get("/api/youtube", async (req, res) => {
+
   try {
 
     const apiKey = process.env.YOUTUBE_API_KEY;
 
     const url =
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=drake&type=video&maxResults=5&key=${apiKey}`;
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=drake&type=video&maxResults=10&key=${apiKey}`;
 
     const response = await fetch(url);
 
     const data = await response.json();
 
-    res.json(data);
+    const analyzed = data.items.map((video, index) => {
+
+      const title = video.snippet.title;
+
+      let score = 50;
+
+      if (title.toLowerCase().includes("drake")) {
+        score += 20;
+      }
+
+      if (title.toLowerCase().includes("diss")) {
+        score += 15;
+      }
+
+      if (title.toLowerCase().includes("kendrick")) {
+        score += 25;
+      }
+
+      if (title.toLowerCase().includes("reaction")) {
+        score += 10;
+      }
+
+      return {
+
+        rank: index + 1,
+
+        title: title,
+
+        channel: video.snippet.channelTitle,
+
+        published: video.snippet.publishedAt,
+
+        thumbnail: video.snippet.thumbnails.high.url,
+
+        viralScore: score
+
+      };
+
+    });
+
+    res.json({
+      keyword: "drake",
+      totalVideos: analyzed.length,
+      results: analyzed
+    });
 
   } catch (error) {
 
@@ -31,6 +76,7 @@ app.get("/api/youtube", async (req, res) => {
     });
 
   }
+
 });
 
 const PORT = process.env.PORT || 8080;
