@@ -32,7 +32,26 @@ app.get("/api/trending/:region", async (req, res) => {
 
       const title = video.snippet.title;
 
-      let score = 50;
+      const views =
+	  parseInt(video.statistics.viewCount || 0);
+
+	const likes =
+	  parseInt(video.statistics.likeCount || 0);
+
+	const comments =
+	  parseInt(video.statistics.commentCount || 0);
+
+	let score = Math.floor(
+
+  (
+    (likes + (comments * 2))
+    /
+    (views || 1)
+  )
+
+  * 10000
+
+);
 
       if (title.toLowerCase().includes("drake")) {
         score += 20;
