@@ -1,8 +1,15 @@
-const functions = require("firebase-functions");
+const express = require("express");
 
-exports.testFunction = functions.https.onRequest((req, res) => {
-    res.json({
-        success: true,
-        message: "Crown Metrics Backend läuft 🔥"
-    });
+const app = express();
+
+app.get("/api/test", (req, res) => {
+  res.json({
+    status: "working"
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server running");
 });
