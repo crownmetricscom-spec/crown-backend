@@ -13,14 +13,16 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-app.get("/api/youtube", async (req, res) => {
+app.get("/api/trending/:region", async (req, res) => {
 
   try {
 
     const apiKey = process.env.YOUTUBE_API_KEY;
 
-    const url =
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=drake&type=video&maxResults=10&key=${apiKey}`;
+    const region = req.params.region || "US";
+
+	const url =
+	  `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&maxResults=30&regionCode=${region}&key=${apiKey}`;
 
     const response = await fetch(url);
 
