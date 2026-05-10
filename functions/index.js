@@ -82,15 +82,7 @@ app.get("/api/trending/:region", async (req, res) => {
 
 	);
 
-  (
-    (likes + (comments * 2))
-    /
-    (views || 1)
-  )
 
-  * 10000
-
-);
 
       if (title.toLowerCase().includes("drake")) {
         score += 20;
