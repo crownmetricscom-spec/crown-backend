@@ -1,3 +1,5 @@
+console.log("BOOT SUCCESS");
+
 const express = require("express");
 
 const app = express();
