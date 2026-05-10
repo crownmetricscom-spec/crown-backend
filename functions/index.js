@@ -27,10 +27,37 @@ app.get("/api/trending/:region", async (req, res) => {
     const response = await fetch(url);
 
     const data = await response.json();
+	
+	let oldSnapshot = [];
+
+	try {
+
+	  const oldData = fs.readFileSync(
+		path.join(__dirname, "snapshots", "snapshot.json")
+	  );
+
+	  oldSnapshot = JSON.parse(oldData).results || [];
+
+	} catch (e) {
+
+	  oldSnapshot = [];
+
+	}
 
     const analyzed = data.items.map((video, index) => {
 
       const title = video.snippet.title;
+	  
+	  const oldVideo =
+	  oldSnapshot.find(v => v.id === video.id);
+
+	const previousRank =
+	  oldVideo ? oldVideo.rank : null;
+
+	const rankChange =
+	  previousRank
+		? previousRank - (index + 1)
+    : 0;
 
       const views =
 	  parseInt(video.statistics.viewCount || 0);
@@ -124,7 +151,11 @@ app.get("/api/trending/:region", async (req, res) => {
 	  comments: parseInt(video.statistics.commentCount || 0),
 
 	  viralScore: score,
-		velocity: Math.floor(velocity)
+		velocity: Math.floor(velocity),
+
+		previousRank,
+
+		rankChange
 
 	};
 
