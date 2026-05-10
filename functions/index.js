@@ -2,6 +2,9 @@ console.log("BOOT SUCCESS");
 
 const express = require("express");
 
+const fs = require("fs");
+const path = require("path");
+
 const app = express();
 
 app.get("/api/test", (req, res) => {
@@ -63,11 +66,51 @@ app.get("/api/youtube", async (req, res) => {
 
     });
 
-    res.json({
+    const snapshot = {
       keyword: "drake",
       totalVideos: analyzed.length,
+      updated: new Date(),
       results: analyzed
+    };
+
+    const filePath = path.join(
+      __dirname,
+      "snapshots",
+      "snapshot.json"
+    );
+
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify(snapshot, null, 2)
+    );
+
+    res.json(snapshot);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
     });
+
+  }
+
+});
+
+app.get("/api/snapshot", (req, res) => {
+
+  try {
+
+    const filePath = path.join(
+      __dirname,
+      "snapshots",
+      "snapshot.json"
+    );
+
+    const data = fs.readFileSync(filePath);
+
+    const json = JSON.parse(data);
+
+    res.json(json);
 
   } catch (error) {
 
