@@ -77,7 +77,19 @@ app.get("/api/trending/:region", async (req, res) => {
     // ANALYSIS ENGINE
     // ===============================
 
-    const analyzed = data.items.map((video, index) => {
+    const analyzed = [];
+
+	for (const [index, video] of data.items.entries()) {
+
+		const channelResponse = await fetch(
+  		`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.snippet.channelId}&key=${apiKey}`
+		);
+
+const channelData =
+  await channelResponse.json();
+
+const channelStats =
+  channelData.items?.[0]?.statistics || {};
 
       const title =
         video.snippet.title;
@@ -273,7 +285,7 @@ app.get("/api/trending/:region", async (req, res) => {
       // RETURN OBJECT
       // ===============================
 
-      return {
+      analyzed.push({
 
         rank: index + 1,
 
@@ -305,12 +317,25 @@ app.get("/api/trending/:region", async (req, res) => {
 
         rankChange,
 
-        status
+		status,
+		
+		subscriberCount:
+		  parseInt(
+		    channelStats.subscriberCount || 0
+		  ),
+		
+		videoCount:
+		  parseInt(
+		    channelStats.videoCount || 0
+		  )
+		
+		});
+		
+		}
 
-      };
 
-    });
 
+	  
     // ===============================
     // SNAPSHOT
     // ===============================
