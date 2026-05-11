@@ -1,16 +1,17 @@
 console.log("BOOT SUCCESS");
 
 const express = require("express");
-
 const fs = require("fs");
 const path = require("path");
 
 const app = express();
 
 app.get("/api/test", (req, res) => {
+
   res.json({
     status: "working"
   });
+
 });
 
 app.get("/api/trending/:region", async (req, res) => {
@@ -21,207 +22,294 @@ app.get("/api/trending/:region", async (req, res) => {
 
     const region = req.params.region || "US";
 
-	const url =
-	  `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&maxResults=30&regionCode=${region}&key=${apiKey}`;
+    const url =
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&maxResults=30&regionCode=${region}&key=${apiKey}`;
 
     const response = await fetch(url);
 
     const data = await response.json();
-	
-	let oldSnapshot = [];
 
-	try {
+    // ===============================
+    // LOAD OLD SNAPSHOT
+    // ===============================
 
-	  const oldData = fs.readFileSync(
-		path.join(__dirname, "snapshots", "snapshot.json")
-	  );
+    let oldSnapshot = [];
 
-	  oldSnapshot = JSON.parse(oldData).results || [];
+    try {
 
-	} catch (e) {
+      const oldData = fs.readFileSync(
+        path.join(__dirname, "snapshots", "snapshot.json")
+      );
 
-	  oldSnapshot = [];
+      oldSnapshot =
+        JSON.parse(oldData).results || [];
 
-	}
+    } catch (e) {
+
+      oldSnapshot = [];
+
+    }
+
+    // ===============================
+    // ANALYSIS ENGINE
+    // ===============================
 
     const analyzed = data.items.map((video, index) => {
 
-      const title = video.snippet.title;
-	  
-	  const oldVideo =
-	  oldSnapshot.find(v => v.id === video.id);
+      const title =
+        video.snippet.title;
 
-	const previousRank =
-	  oldVideo ? oldVideo.rank : null;
+      const oldVideo =
+        oldSnapshot.find(
+          v => v.id === video.id
+        );
 
-	const rankChange =
-	let status = "stable";
+      const previousRank =
+        oldVideo
+          ? oldVideo.rank
+          : null;
 
-	if (
-	  score >= 900 &&
-	  velocity >= 30000 &&
-	  rankChange >= 2
-	) {
+      const rankChange =
+        previousRank
+          ? previousRank - (index + 1)
+          : 0;
 
-	  status = "viral";
-
-	}
-
-	else if (
-	  score >= 700 &&
-	  velocity >= 15000
-	) {
-
-	  status = "hot";
-
-	}
-
-	else if (
-	  rankChange >= 3
-	) {
-
-	  status = "rising";
-
-	}
-
-	else if (
-	  rankChange <= -3
-	) {
-
-	  status = "falling";
-
-	}
-
-	else if (
-	  velocity >= 40000 &&
-	  index >= 15
-	) {
-
-	  status = "hidden_gem";
-
-	}
-
-	else if (
-	  index === 0 &&
-	  score >= 800
-	) {
-
-	  status = "champion";
-
-	}
-	  previousRank
-		? previousRank - (index + 1)
-    : 0;
+      // ===============================
+      // STATS
+      // ===============================
 
       const views =
-	  parseInt(video.statistics.viewCount || 0);
+        parseInt(
+          video.statistics.viewCount || 0
+        );
 
-	const likes =
-	  parseInt(video.statistics.likeCount || 0);
+      const likes =
+        parseInt(
+          video.statistics.likeCount || 0
+        );
 
-	const comments =
-	  parseInt(video.statistics.commentCount || 0);
-	  
-	const publishedDate =
-	  new Date(video.snippet.publishedAt);
+      const comments =
+        parseInt(
+          video.statistics.commentCount || 0
+        );
 
-	const now = new Date();
+      // ===============================
+      // TIME ENGINE
+      // ===============================
 
-	const ageHours =
-	  (now - publishedDate) / 3600000;
-	
-	const velocity =
-		views / Math.max(ageHours, 1);
+      const publishedDate =
+        new Date(
+          video.snippet.publishedAt
+        );
 
-	let score = Math.floor(
+      const now = new Date();
 
-	  (
+      const ageHours =
+        (now - publishedDate) / 3600000;
 
-		(
-		  likes +
-		  (comments * 2)
-		)
+      // ===============================
+      // VELOCITY ENGINE
+      // ===============================
 
-		/
+      const velocity =
+        views / Math.max(ageHours, 1);
 
-		(views || 1)
+      // ===============================
+      // SCORE ENGINE
+      // ===============================
 
-	  )
+      let score = Math.floor(
 
-	  *
+        (
 
-	  10000
+          (
+            likes +
+            (comments * 2)
+          )
 
-	  *
+          /
 
-	  (
+          (views || 1)
 
-		ageHours < 24
-		  ? 1.5
-		  : ageHours < 72
-		  ? 1.2
-		  : 1
+        )
 
-	  )
+        *
 
-	);
+        10000
 
+        *
 
+        (
 
-      if (title.toLowerCase().includes("drake")) {
+          ageHours < 24
+            ? 1.5
+            : ageHours < 72
+            ? 1.2
+            : 1
+
+        )
+
+      );
+
+      // ===============================
+      // BONUS SIGNALS
+      // ===============================
+
+      if (
+        title.toLowerCase().includes("drake")
+      ) {
+
         score += 20;
+
       }
 
-      if (title.toLowerCase().includes("diss")) {
+      if (
+        title.toLowerCase().includes("diss")
+      ) {
+
         score += 15;
+
       }
 
-      if (title.toLowerCase().includes("kendrick")) {
+      if (
+        title.toLowerCase().includes("kendrick")
+      ) {
+
         score += 25;
+
       }
 
-      if (title.toLowerCase().includes("reaction")) {
+      if (
+        title.toLowerCase().includes("reaction")
+      ) {
+
         score += 10;
+
       }
+
+      // ===============================
+      // TREND STATUS ENGINE
+      // ===============================
+
+      let status = "stable";
+
+      if (
+        score >= 900 &&
+        velocity >= 30000 &&
+        rankChange >= 2
+      ) {
+
+        status = "viral";
+
+      }
+
+      else if (
+        score >= 700 &&
+        velocity >= 15000
+      ) {
+
+        status = "hot";
+
+      }
+
+      else if (
+        rankChange >= 3
+      ) {
+
+        status = "rising";
+
+      }
+
+      else if (
+        rankChange <= -3
+      ) {
+
+        status = "falling";
+
+      }
+
+      else if (
+        velocity >= 40000 &&
+        index >= 15
+      ) {
+
+        status = "hidden_gem";
+
+      }
+
+      else if (
+        index === 0 &&
+        score >= 800
+      ) {
+
+        status = "champion";
+
+      }
+
+      // ===============================
+      // RETURN OBJECT
+      // ===============================
 
       return {
 
-	  rank: index + 1,
+        rank: index + 1,
 
-	  id: video.id,
+        id: video.id,
 
-	  title: title,
+        title: title,
 
-	  channel: video.snippet.channelTitle,
+        channel:
+          video.snippet.channelTitle,
 
-	  published: video.snippet.publishedAt,
+        published:
+          video.snippet.publishedAt,
 
-	  thumbnail: video.snippet.thumbnails.high.url,
+        thumbnail:
+          video.snippet.thumbnails.high.url,
 
-	  views: parseInt(video.statistics.viewCount || 0),
+        views,
 
-	  likes: parseInt(video.statistics.likeCount || 0),
+        likes,
 
-	  comments: parseInt(video.statistics.commentCount || 0),
+        comments,
 
-	  viralScore: score,
-		velocity: Math.floor(velocity),
+        viralScore: score,
 
-		previousRank,
+        velocity:
+          Math.floor(velocity),
 
-		rankChange
-		status
+        previousRank,
 
-	};
+        rankChange,
+
+        status
+
+      };
 
     });
 
+    // ===============================
+    // SNAPSHOT
+    // ===============================
+
     const snapshot = {
-      keyword: "drake",
-      totalVideos: analyzed.length,
-      updated: new Date(),
-      results: analyzed
+
+      totalVideos:
+        analyzed.length,
+
+      updated:
+        new Date(),
+
+      region,
+
+      results:
+        analyzed
+
     };
+
+    // ===============================
+    // SAVE SNAPSHOT
+    // ===============================
 
     const filePath = path.join(
       __dirname,
@@ -234,17 +322,29 @@ app.get("/api/trending/:region", async (req, res) => {
       JSON.stringify(snapshot, null, 2)
     );
 
+    // ===============================
+    // RESPONSE
+    // ===============================
+
     res.json(snapshot);
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     res.status(500).json({
+
       error: error.message
+
     });
 
   }
 
 });
+
+// ===============================
+// SNAPSHOT ROUTE
+// ===============================
 
 app.get("/api/snapshot", (req, res) => {
 
@@ -256,24 +356,39 @@ app.get("/api/snapshot", (req, res) => {
       "snapshot.json"
     );
 
-    const data = fs.readFileSync(filePath);
+    const data =
+      fs.readFileSync(filePath);
 
-    const json = JSON.parse(data);
+    const json =
+      JSON.parse(data);
 
     res.json(json);
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     res.status(500).json({
+
       error: error.message
+
     });
 
   }
 
 });
 
-const PORT = process.env.PORT || 8080;
+// ===============================
+// SERVER
+// ===============================
+
+const PORT =
+  process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+  console.log(
+    `Server running on port ${PORT}`
+  );
+
 });
