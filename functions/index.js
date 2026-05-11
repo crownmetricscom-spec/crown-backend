@@ -1,11 +1,21 @@
 console.log("BOOT SUCCESS");
 
+const admin = require("firebase-admin");
+
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
 const app = express();
+
+admin.initializeApp({
+  databaseURL:
+  "https://crown-metrics-default-rtdb.europe-west1.firebasedatabase.app"
+});
+
+const db = admin.database();
+
 app.use(cors());
 
 app.get("/api/test", (req, res) => {
