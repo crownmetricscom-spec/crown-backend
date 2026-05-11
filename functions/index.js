@@ -2,19 +2,24 @@ console.log("BOOT SUCCESS");
 
 const admin = require("firebase-admin");
 
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT
+);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL:
+    "https://crown-metrics-default-rtdb.europe-west1.firebasedatabase.app"
+});
+
+const db = admin.database();
+
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
 const app = express();
-
-admin.initializeApp({
-  databaseURL:
-  "https://crown-metrics-default-rtdb.europe-west1.firebasedatabase.app"
-});
-
-const db = admin.database();
 
 app.use(cors());
 
@@ -333,6 +338,32 @@ app.get("/api/trending/:region", async (req, res) => {
       filePath,
       JSON.stringify(snapshot, null, 2)
     );
+	
+	// FIREBASE LIVE SAVE
+
+	await db.ref("snapshots_live/" + region).set({
+
+	  lastUpdate: Date.now(),
+
+	  songs: analyzed
+
+	});
+
+	// FIREBASE HISTORY SAVE
+
+	await db.ref(
+	  "snapshots_history/" +
+	  region +
+	  "/" +
+	  Date.now()
+	).set({
+
+	  songs: analyzed
+
+	});
+	
+	
+	
 	
 	const historyFileName =
 
