@@ -321,6 +321,26 @@ app.get("/api/trending/:region", async (req, res) => {
       filePath,
       JSON.stringify(snapshot, null, 2)
     );
+	
+	const historyFileName =
+
+  `snapshot-${Date.now()}.json`;
+
+	const historyPath = path.join(
+
+	  __dirname,
+	  "snapshots",
+	  "history",
+	  historyFileName
+
+	);
+
+	fs.writeFileSync(
+
+	  historyPath,
+	  JSON.stringify(snapshot, null, 2)
+
+	);
 
     // ===============================
     // RESPONSE
