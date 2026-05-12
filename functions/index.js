@@ -60,9 +60,16 @@ app.get("/api/trending/:region", async (req, res) => {
 
     try {
 
-      const oldData = fs.readFileSync(
-        path.join(__dirname, "snapshots", "snapshot.json")
-      );
+      const snapshotFile =
+  `snapshot-${region}.json`;
+
+	const oldData = fs.readFileSync(
+  	path.join(
+    __dirname,
+    "snapshots",
+    snapshotFile
+  	)
+	);
 
       oldSnapshot =
         JSON.parse(oldData).results || [];
@@ -287,6 +294,12 @@ const channelStats =
 
       analyzed.push({
 
+  		firstListed:
+    		oldVideo?.firstListed || Date.now(),
+
+  		lastSeen:
+    		Date.now(),
+
         rank: index + 1,
 
         id: video.id,
@@ -362,11 +375,14 @@ const channelStats =
     // SAVE SNAPSHOT
     // ===============================
 
-    const filePath = path.join(
-      __dirname,
-      "snapshots",
-      "snapshot.json"
-    );
+    const snapshotFile =
+  	`snapshot-${region}.json`;
+
+	const filePath = path.join(
+  	__dirname,
+  	"snapshots",
+  	snapshotFile
+	);
 
     fs.writeFileSync(
       filePath,
@@ -400,8 +416,9 @@ const channelStats =
 	
 	
 	const historyFileName =
+  `${region}-${Date.now()}.json`;
 
-  `snapshot-${Date.now()}.json`;
+
 
 	const historyPath = path.join(
 
@@ -447,10 +464,13 @@ app.get("/api/snapshot", (req, res) => {
 
   try {
 
+    const region =
+      req.query.region || "US";
+
     const filePath = path.join(
       __dirname,
       "snapshots",
-      "snapshot.json"
+      `snapshot-${region}.json`
     );
 
     const data =
