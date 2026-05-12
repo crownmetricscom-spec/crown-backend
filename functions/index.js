@@ -193,23 +193,43 @@ app.get("/api/trending/:region", async (req, res) => {
 
     const analyzed = [];
 
+const channelIds = data.items
+.map(v => v.snippet.channelId)
+.join(",");
+
+const channelResponse = await fetch(
+
+`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelIds}&key=${apiKey}`
+
+);
+
+const channelData =
+await channelResponse.json();
+
+const channelMap = {};
+
+channelData.items.forEach(c => {
+
+channelMap[c.id] = {
+
+subs:
+parseInt(c.statistics.subscriberCount || 0),
+
+videos:
+parseInt(c.statistics.videoCount || 0),
+
+country:
+c.snippet?.country || "GLOBAL"
+
+};
+
+});
+	  
 	for (const [index, video] of data.items.entries()) {
 
-		const channelResponse = await fetch(
-
-		`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${video.snippet.channelId}&key=${apiKey}`
-
-		);
-
-		const channelData =
-  		await channelResponse.json();
-
-		const channelStats =
-  		channelData.items?.[0]?.statistics || {};
-
-		const channelCountry =
-  		channelData.items?.[0]?.snippet?.country || "GLOBAL";
-
+	const channelInfo =
+	channelMap[video.snippet.channelId] || {};
+		
       const title =
         video.snippet.title;
 
@@ -423,10 +443,11 @@ app.get("/api/trending/:region", async (req, res) => {
   		video.snippet.channelTitle,
 
 		originCountry:
-  		channelCountry,
+		channelInfo.country || "GLOBAL",
 
 		published:
   		video.snippet.publishedAt,
+			
 
         thumbnail:
           video.snippet.thumbnails.high.url,
@@ -453,14 +474,10 @@ app.get("/api/trending/:region", async (req, res) => {
   			Math.floor(ageHours),
 		
 		subscriberCount:
-		  parseInt(
-		    channelStats.subscriberCount || 0
-		  ),
+		channelInfo.subs || 0,
 		
 		videoCount:
-		  parseInt(
-		    channelStats.videoCount || 0
-		  )
+		channelInfo.videos || 0
 		
 		});
 		
@@ -656,20 +673,43 @@ async function autoGlobalScanner() {
 
       const analyzed = [];
 
+const channelIds = data.items
+.map(v => v.snippet.channelId)
+.join(",");
+
+const channelResponse = await fetch(
+
+`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelIds}&key=${apiKey}`
+
+);
+
+const channelData =
+await channelResponse.json();
+
+const channelMap = {};
+
+channelData.items.forEach(c => {
+
+channelMap[c.id] = {
+
+subs:
+parseInt(c.statistics.subscriberCount || 0),
+
+videos:
+parseInt(c.statistics.videoCount || 0),
+
+country:
+c.snippet?.country || "GLOBAL"
+
+};
+
+});
+
+		
       for (const [index, video] of data.items.entries()) {
 
-        const channelResponse = await fetch(
-		`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${video.snippet.channelId}&key=${apiKey}`
-		);
-		
-		const channelData =
-		  await channelResponse.json();
-		
-		const channelStats =
-		  channelData.items?.[0]?.statistics || {};
-		
-		const channelCountry =
-		  channelData.items?.[0]?.snippet?.country || "GLOBAL";
+        const channelInfo =
+		channelMap[video.snippet.channelId] || {};
 
         const views =
           parseInt(
@@ -791,7 +831,7 @@ async function autoGlobalScanner() {
   			video.snippet.channelTitle,
 
 			originCountry:
-			  channelCountry,
+			channelInfo.country || "GLOBAL",
 			
 			published:
 			  video.snippet.publishedAt,
@@ -823,14 +863,10 @@ async function autoGlobalScanner() {
             Math.floor(ageHours),
 
           subscriberCount:
-            parseInt(
-              channelStats.subscriberCount || 0
-            ),
+			channelInfo.subs || 0,
 
           videoCount:
-            parseInt(
-              channelStats.videoCount || 0
-            )
+			channelInfo.videos || 0
 
         });
 
