@@ -188,6 +188,13 @@ app.get("/api/trending/:region", async (req, res) => {
     const apiKey = getApiKey();
 
     const region = req.params.region || "US";
+	  if(region === "GLOBAL") {
+
+		return res.json({
+		results: []
+		});
+		
+		}
 
     const url =
       `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&maxResults=30&regionCode=${region}&key=${apiKey}`;
@@ -512,16 +519,44 @@ c.snippet?.country || "GLOBAL"
 
         comments,
 
-        viralScore: score,
+        score: score,
 
-        velocity:
-          Math.floor(velocity),
-
-        previousRank,
-
-        rankChange,
-
+		viralScore: score,
+		
+		viralProbability: Math.min(
+		  Math.floor(
+		    (score * 0.7) +
+		    (Math.min(velocity, 50000) / 1000)
+		  ),
+		  99
+		),
+		
+		velocity:
+		Math.floor(velocity),
+		
+		previousRank,
+		
+		rankChange,
+		
 		status,
+		
+		label:
+		status === "viral" ? "Viral" :
+		status === "hot" ? "Hot" :
+		status === "champion" ? "Champion" :
+		status === "hidden_gem" ? "Insider" :
+		status === "rising" ? "Peak" :
+		status === "falling" ? "Drop" :
+		"Stable",
+		
+		icon:
+		status === "viral" ? "🚀" :
+		status === "hot" ? "🔥" :
+		status === "champion" ? "👑" :
+		status === "hidden_gem" ? "💎" :
+		status === "rising" ? "▲" :
+		status === "falling" ? "▼" :
+		"●",
 
 		  
 		ageInHours:
