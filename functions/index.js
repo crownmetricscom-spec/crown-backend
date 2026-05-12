@@ -614,13 +614,27 @@ c.snippet?.country || "GLOBAL"
 	
 	// FIREBASE LIVE SAVE
 
-	await db.ref("snapshots_live/" + region).set({
-
-	  lastUpdate: Date.now(),
-
-	  songs: analyzed
-
-	});
+		const updates = {};
+		
+		updates[
+		  `snapshots_live/${region}/metadata/lastUpdate`
+		] = Date.now();
+		
+		analyzed.forEach((song, index) => {
+		
+		  // SONG GLOBAL SPEICHERN
+		  updates[
+		    `songs_by_id/${song.id}`
+		  ] = song;
+		
+		  // RANKING SPEICHERN
+		  updates[
+		    `snapshots_live/${region}/rankings/${index + 1}`
+		  ] = song.id;
+		
+		});
+		
+		await db.ref().update(updates);
 
 	// FIREBASE HISTORY SAVE
 
