@@ -31,6 +31,53 @@ const path = require("path");
 
 const app = express();
 
+const API_KEYS = [
+
+process.env.YOUTUBE_API_KEY_1,
+process.env.YOUTUBE_API_KEY_2,
+process.env.YOUTUBE_API_KEY_3,
+process.env.YOUTUBE_API_KEY_4,
+process.env.YOUTUBE_API_KEY_5,
+process.env.YOUTUBE_API_KEY_6
+
+];
+
+function getApiKey() {
+
+return API_KEYS[currentKeyIndex];
+
+}
+
+function rotateApiKey() {
+
+currentKeyIndex++;
+
+if (currentKeyIndex >= API_KEYS.length) {
+
+currentKeyIndex = 0;
+
+}
+
+console.log(
+"SWITCHED TO API KEY:",
+currentKeyIndex + 1
+);
+
+}
+
+let currentKeyIndex = 0;
+
+const API_KEYS = [
+
+process.env.YOUTUBE_API_KEY_1,
+process.env.YOUTUBE_API_KEY_2,
+process.env.YOUTUBE_API_KEY_3,
+process.env.YOUTUBE_API_KEY_4,
+process.env.YOUTUBE_API_KEY_5,
+process.env.YOUTUBE_API_KEY_6
+
+];
+
 let COUNTRIES = [
 
 "AE","AR","AT","AU","AZ",
@@ -73,8 +120,7 @@ async function discoverNewRegions() {
 
       try {
 
-        const apiKey =
-          process.env.YOUTUBE_API_KEY;
+        const apiKey = getApiKey();
 
 	const url =
 `https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=1&regionCode=${code}&key=${apiKey}`;
@@ -148,7 +194,7 @@ app.get("/api/trending/:region", async (req, res) => {
 
   try {
 
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const apiKey = getApiKey();
 
     const region = req.params.region || "US";
 
@@ -158,6 +204,23 @@ app.get("/api/trending/:region", async (req, res) => {
     const response = await fetch(url);
 
     const data = await response.json();
+
+	  if (data.error) {
+
+console.log(
+"API ERROR:",
+data.error.message
+);
+
+if (
+data.error.message.toLowerCase().includes("quota")
+) {
+
+rotateApiKey();
+
+}
+
+}
 
     // ===============================
     // LOAD OLD SNAPSHOT
@@ -642,10 +705,11 @@ async function autoGlobalScanner() {
 
     try {
 
+		const apiKey = getApiKey();
+
       console.log("Scanning:", region);
 
-      const apiKey =
-        process.env.YOUTUBE_API_KEY;
+      
 
       const url =
 `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&maxResults=30&regionCode=${region}&key=${apiKey}`;
