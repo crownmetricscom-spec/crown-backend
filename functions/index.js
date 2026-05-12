@@ -318,6 +318,9 @@ const channelStats =
         rankChange,
 
 		status,
+
+		ageInHours:
+  			Math.floor(ageHours),
 		
 		subscriberCount:
 		  parseInt(
