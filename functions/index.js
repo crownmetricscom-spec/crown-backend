@@ -196,14 +196,19 @@ app.get("/api/trending/:region", async (req, res) => {
 	for (const [index, video] of data.items.entries()) {
 
 		const channelResponse = await fetch(
-  		`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.snippet.channelId}&key=${apiKey}`
+
+		`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${video.snippet.channelId}&key=${apiKey}`
+
 		);
 
-const channelData =
-  await channelResponse.json();
+		const channelData =
+  		await channelResponse.json();
 
-const channelStats =
-  channelData.items?.[0]?.statistics || {};
+		const channelStats =
+  		channelData.items?.[0]?.statistics || {};
+
+		const channelCountry =
+  		channelData.items?.[0]?.snippet?.country || "GLOBAL";
 
       const title =
         video.snippet.title;
@@ -411,13 +416,17 @@ const channelStats =
 
         id: video.id,
 
-        title: title,
+        title:
+    	video.snippet.title,
 
         channel:
-          video.snippet.channelTitle,
+  		video.snippet.channelTitle,
 
-        published:
-          video.snippet.publishedAt,
+		originCountry:
+  		channelCountry,
+
+		published:
+  		video.snippet.publishedAt,
 
         thumbnail:
           video.snippet.thumbnails.high.url,
@@ -439,6 +448,7 @@ const channelStats =
 
 		status,
 
+		  
 		ageInHours:
   			Math.floor(ageHours),
 		
@@ -649,16 +659,17 @@ async function autoGlobalScanner() {
       for (const [index, video] of data.items.entries()) {
 
         const channelResponse = await fetch(
-
-`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.snippet.channelId}&key=${apiKey}`
-
-        );
-
-        const channelData =
-          await channelResponse.json();
-
-        const channelStats =
-          channelData.items?.[0]?.statistics || {};
+		`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${video.snippet.channelId}&key=${apiKey}`
+		);
+		
+		const channelData =
+		  await channelResponse.json();
+		
+		const channelStats =
+		  channelData.items?.[0]?.statistics || {};
+		
+		const channelCountry =
+		  channelData.items?.[0]?.snippet?.country || "GLOBAL";
 
         const views =
           parseInt(
@@ -777,10 +788,13 @@ async function autoGlobalScanner() {
             video.snippet.title,
 
           channel:
-            video.snippet.channelTitle,
+  			video.snippet.channelTitle,
 
-          published:
-            video.snippet.publishedAt,
+			originCountry:
+			  channelCountry,
+			
+			published:
+			  video.snippet.publishedAt,
 
           thumbnail:
             video.snippet.thumbnails.high.url,
