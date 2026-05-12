@@ -12,10 +12,17 @@ serviceAccount.private_key.replace(
   "\n"
 );
 
+const serviceAccount =
+JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT
+);
+
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential:
+  admin.credential.cert(serviceAccount),
+
   databaseURL:
-    "https://crown-metrics-default-rtdb.europe-west1.firebasedatabase.app"
+  "https://crown-metrics-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = admin.database();
