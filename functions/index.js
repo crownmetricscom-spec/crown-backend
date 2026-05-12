@@ -31,6 +31,109 @@ const path = require("path");
 
 const app = express();
 
+let COUNTRIES = [
+
+"AE","AR","AT","AU","AZ",
+"BA","BD","BE","BG","BH","BO","BR","BY",
+"CA","CH","CL","CO","CR","CY","CZ",
+"DE","DK","DO","DZ",
+"EC","EE","EG","ES",
+"FI","FR","GB","GE","GH","GR","GT",
+"HK","HN","HR","HU",
+"ID","IE","IL","IN","IQ","IS","IT",
+"JM","JO","JP",
+"KE","KR","KW","KZ",
+"LB","LI","LK","LT","LU","LV",
+"LY","MA","ME","MK","MT","MX","MY",
+"NG","NI","NL","NO","NP","NZ",
+"OM","PA","PE","PH","PK","PL","PR","PT","PY",
+"QA","RO","RS","RU",
+"SA","SE","SG","SI","SK","SN","SV",
+"TH","TN","TR","TW","TZ",
+"UA","UG","US","UY","UZ",
+"VE","VN","YE","ZA","ZW"
+
+];
+
+async function discoverNewRegions() {
+
+  console.log("REGION DISCOVERY START");
+
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  for (const a of alphabet) {
+
+    for (const b of alphabet) {
+
+      const code = a + b;
+
+      if (COUNTRIES.includes(code)) {
+        continue;
+      }
+
+      try {
+
+        const apiKey =
+          process.env.YOUTUBE_API_KEY;
+
+	const url =
+`https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=1&regionCode=${code}&key=${apiKey}`;
+
+        const response =
+          await fetch(url);
+
+        const data =
+          await response.json();
+
+        if (
+          data.items &&
+          data.items.length > 0
+        ) {
+
+          COUNTRIES.push(code);
+
+          console.log(
+            "NEW REGION FOUND:",
+            code
+          );
+
+          await db.ref(
+            "system/new_regions/" + code
+          ).set({
+
+            discovered:
+              Date.now(),
+
+            code
+
+          });
+
+        }
+}
+
+      catch (err) {
+
+        console.log(
+          "DISCOVERY ERROR:",
+          code
+        );
+
+      }
+
+    }
+
+  }
+
+  console.log("REGION DISCOVERY END");
+
+}
+		  
+
+
+
+
+
+
 app.use(cors());
 
 app.get("/api/test", (req, res) => {
@@ -503,9 +606,295 @@ app.get("/api/snapshot", (req, res) => {
 // SERVER
 // ===============================
 
+
+async function autoGlobalScanner() {
+
+  console.log("AUTO SCAN START");
+
+  for (const region of COUNTRIES) {
+
+    try {
+
+      console.log("Scanning:", region);
+
+      const apiKey =
+        process.env.YOUTUBE_API_KEY;
+
+      const url =
+`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&maxResults=30&regionCode=${region}&key=${apiKey}`;
+
+      const response =
+        await fetch(url);
+
+      const data =
+        await response.json();
+
+      if (!data.items) {
+
+        console.log(
+          "No data:",
+          region
+        );
+
+        continue;
+
+      }
+
+      // ===============================
+      // ANALYSIS ENGINE
+      // ===============================
+
+      const analyzed = [];
+
+      for (const [index, video] of data.items.entries()) {
+
+        const channelResponse = await fetch(
+
+`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.snippet.channelId}&key=${apiKey}`
+
+        );
+
+        const channelData =
+          await channelResponse.json();
+
+        const channelStats =
+          channelData.items?.[0]?.statistics || {};
+
+        const views =
+          parseInt(
+            video.statistics.viewCount || 0
+          );
+
+        const likes =
+          parseInt(
+            video.statistics.likeCount || 0
+          );
+
+        const comments =
+          parseInt(
+            video.statistics.commentCount || 0
+          );
+
+        const publishedDate =
+          new Date(
+            video.snippet.publishedAt
+          );
+
+        const ageHours =
+          (
+            Date.now() - publishedDate
+          ) / 3600000;
+
+        const velocity =
+          views / Math.max(ageHours, 1);
+
+        let score = Math.floor(
+
+          (
+
+            (
+              likes +
+              (comments * 2)
+            )
+
+            /
+
+            (views || 1)
+
+          )
+
+          *
+
+          10000
+
+          *
+
+          (
+
+            ageHours < 24
+              ? 1.5
+              : ageHours < 72
+              ? 1.2
+              : 1
+
+          )
+
+        );
+
+        let status = "stable";
+
+        if (
+          score >= 900 &&
+          velocity >= 30000
+        ) {
+
+          status = "viral";
+
+        }
+
+        else if (
+          score >= 700 &&
+          velocity >= 15000
+        ) {
+
+          status = "hot";
+
+        }
+
+        else if (
+          velocity >= 40000 &&
+          index >= 15
+        ) {
+
+          status = "hidden_gem";
+
+        }
+
+        else if (
+          index === 0 &&
+          score >= 800
+        ) {
+
+          status = "champion";
+
+        }
+
+        analyzed.push({
+
+          firstListed:
+            Date.now(),
+
+          lastSeen:
+            Date.now(),
+
+          rank:
+            index + 1,
+
+          id:
+            video.id,
+
+          title:
+            video.snippet.title,
+
+          channel:
+            video.snippet.channelTitle,
+
+          published:
+            video.snippet.publishedAt,
+
+          thumbnail:
+            video.snippet.thumbnails.high.url,
+
+          views,
+
+          likes,
+
+          comments,
+
+          viralScore:
+            score,
+
+          velocity:
+            Math.floor(velocity),
+
+          previousRank:
+            null,
+
+          rankChange:
+            0,
+
+          status,
+
+          ageInHours:
+            Math.floor(ageHours),
+
+          subscriberCount:
+            parseInt(
+              channelStats.subscriberCount || 0
+            ),
+
+          videoCount:
+            parseInt(
+              channelStats.videoCount || 0
+            )
+
+        });
+
+      }
+
+      // ===============================
+      // FIREBASE LIVE SAVE
+      // ===============================
+
+      await db.ref(
+        "snapshots_live/" + region
+      ).set({
+
+        lastUpdate:
+          Date.now(),
+
+        songs:
+          analyzed
+
+      });
+
+      // ===============================
+      // FIREBASE HISTORY SAVE
+      // ===============================
+
+      await db.ref(
+
+        "snapshots_history/" +
+        region +
+        "/" +
+        Date.now()
+
+      ).set({
+
+        songs:
+          analyzed
+
+      });
+
+      console.log(
+        "Saved:",
+        region
+      );
+
+    }
+
+    catch (err) {
+
+      console.log(
+
+        "SCAN ERROR:",
+        region,
+        err.message
+
+      );
+
+    }
+
+  }
+
+  console.log("AUTO SCAN END");
+
+}
+
+
 const PORT =
   process.env.PORT || 8080;
+setTimeout(() => {
 
+  autoGlobalScanner();
+
+}, 15000);
+
+setInterval(() => {
+
+  autoGlobalScanner();
+
+}, 1800000);
 app.listen(PORT, () => {
 
   console.log(
