@@ -59,6 +59,10 @@ const {
   calculateLifecycle
 } = require("./engines/lifecycleEngine");
 
+const {
+  calculatePrediction
+} = require("./engines/predictionEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -231,24 +235,41 @@ app.get("/api/trending/:region", async (req, res) => {
 
     const response = await fetch(url);
 
-    const data = await response.json();
+const data = await response.json();
 
-	  if (data.error) {
+if (!data.items) {
 
-console.log(
-"API ERROR:",
-data.error.message
-);
+  return res.status(500).json({
 
-if (
-data.error.message.toLowerCase().includes("quota")
-) {
+    error: "No items returned"
 
+  });
+
+}
+	 	if (data.error) {
+		
+		  console.log(
+		    "API ERROR:",
+		    data.error.message
+		  );
+		
+		  if (
+		    data.error.message
+		      .toLowerCase()
+		      .includes("quota")
+		  ) {
+		
+
+		
 rotateApiKey();
-
-}
-
-}
+return res.status(429).json({
+error: "API quota exceeded, retry request"
+});
+		
+		  }
+		
+		}
+		
 
     // ===============================
     // LOAD OLD SNAPSHOT
@@ -285,6 +306,13 @@ rotateApiKey();
     const analyzed = [];
 	const rawVideos = [];  
 
+// BLOCK A1 - OLD MAP
+
+const oldMap = {};
+oldSnapshot.forEach(v => {
+  oldMap[v.id] = v;
+});
+
 const channelIds = data.items
 .map(v => v.snippet.channelId)
 .join(",");
@@ -297,6 +325,20 @@ const channelResponse = await fetch(
 
 const channelData =
 await channelResponse.json();
+
+if (!channelData.items) {
+
+  console.log(
+    "CHANNEL API ERROR"
+  );
+
+  return res.status(500).json({
+
+    error: "Channel API failed"
+
+  });
+
+}  
 
 const channelMap = {};
 
@@ -317,7 +359,9 @@ c.snippet?.country || "GLOBAL"
 
 });
 	  
-	for (const [index, video] of data.items.entries()) {
+	  
+	  
+for (const [index, video] of data.items.entries()) {
 
 	const channelInfo =
 	channelMap[video.snippet.channelId] || {};
@@ -325,11 +369,11 @@ c.snippet?.country || "GLOBAL"
       const title =
         video.snippet.title;
 
-      const oldVideo =
-        oldSnapshot.find(
-          v => v.id === video.id
-        );
+// BLOCK A2 - OLD VIDEO
 
+const oldVideo =
+oldMap[video.id];
+	
       const previousRank =
         oldVideo
           ? oldVideo.rank
@@ -462,7 +506,7 @@ const lifecycle = calculateLifecycle({
   rankChange
 
 });
-		
+
 const aiDetection = detectSuspiciousActivity({
 
   views,
@@ -471,6 +515,17 @@ const aiDetection = detectSuspiciousActivity({
   velocity,
   subscriberCount:
   channelInfo.subs || 0,
+  ageHours
+
+});
+
+const prediction = calculatePrediction({
+
+  velocity,
+  momentum,
+  lifecycle,
+  suspiciousScore:
+  aiDetection.suspiciousScore,
   ageHours
 
 });
@@ -522,7 +577,7 @@ const aiDetection = detectSuspiciousActivity({
 
         comments,
 
-        score: score,
+        
 
 		viralScore: score,
 		
@@ -537,6 +592,12 @@ const aiDetection = detectSuspiciousActivity({
 		 momentum, 
 
 		lifecycle,
+
+		  predictionScore:
+			prediction.predictionScore,
+			
+			predictionLabel:
+			prediction.predictionLabel,
 		  
 		velocity:
 		Math.floor(velocity),
@@ -570,7 +631,9 @@ const aiDetection = detectSuspiciousActivity({
 		aiDetection.suspiciousScore,
 		
 		suspiciousLabel:
-		aiDetection.suspiciousLabel
+		aiDetection.suspiciousLabel,
+
+
 
 		  
 		});
@@ -633,7 +696,7 @@ const aiDetection = detectSuspiciousActivity({
 		
 		  // SONG GLOBAL SPEICHERN
 		  updates[
-		    `songs_by_id/${song.id}`
+		    `songs_by_region/${region}/${song.id}`
 		  ] = song;
 		
 		  // RANKING SPEICHERN
@@ -799,6 +862,17 @@ const channelResponse = await fetch(
 const channelData =
 await channelResponse.json();
 
+if (!channelData.items) {
+
+  console.log(
+    "CHANNEL API ERROR"
+  );
+
+  continue;
+
+}
+		
+
 const channelMap = {};
 
 channelData.items.forEach(c => {
@@ -818,11 +892,13 @@ c.snippet?.country || "GLOBAL"
 
 });
 
-		
-      for (const [index, video] of data.items.entries()) {
 
-        const channelInfo =
-		channelMap[video.snippet.channelId] || {};
+
+for (const [index, video] of data.items.entries()) {
+
+  const channelInfo =
+    channelMap[video.snippet.channelId] || {};
+
 
         const views =
           parseInt(
@@ -882,6 +958,29 @@ const lifecycle = calculateLifecycle({
   rankChange: 0
 
 });
+
+		  const aiDetection = detectSuspiciousActivity({
+
+  views,
+  likes,
+  comments,
+  velocity,
+  subscriberCount:
+  channelInfo.subs || 0,
+  ageHours
+
+});
+
+const prediction = calculatePrediction({
+
+  velocity,
+  momentum,
+  lifecycle,
+  suspiciousScore:
+  aiDetection.suspiciousScore,
+  ageHours
+
+});
 		  
 		const status = calculateStatus({
 		
@@ -939,6 +1038,18 @@ const lifecycle = calculateLifecycle({
 			momentum,
 			lifecycle,
 
+			predictionScore:
+			prediction.predictionScore,
+			
+			predictionLabel:
+			prediction.predictionLabel,
+			
+			suspiciousScore:
+			aiDetection.suspiciousScore,
+			
+			suspiciousLabel:
+			aiDetection.suspiciousLabel,
+
           previousRank:
             null,
 
@@ -965,8 +1076,8 @@ const lifecycle = calculateLifecycle({
       // ===============================
 
       await db.ref(
-        "snapshots_live/" + region
-      ).set({
+  "snapshots_live/" + region
+).update({
 
         lastUpdate:
           Date.now(),
@@ -1022,6 +1133,7 @@ const lifecycle = calculateLifecycle({
 
 const PORT =
   process.env.PORT || 8080;
+
 setTimeout(() => {
 
   autoGlobalScanner();
@@ -1033,6 +1145,13 @@ setInterval(() => {
   autoGlobalScanner();
 
 }, 1800000);
+
+setInterval(() => {
+
+  discoverNewRegions();
+
+}, 86400000);
+
 app.listen(PORT, () => {
 
   console.log(
