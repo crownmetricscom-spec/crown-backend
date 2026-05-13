@@ -38,6 +38,10 @@ const {
   detectSuspiciousActivity
 } = require("./engines/aiDetectionEngine");
 
+const {
+  detectDuplicateVideos
+} = require("./engines/duplicateDetectionEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -262,6 +266,7 @@ rotateApiKey();
     // ===============================
 
     const analyzed = [];
+	const rawVideos = [];  
 
 const channelIds = data.items
 .map(v => v.snippet.channelId)
@@ -403,37 +408,43 @@ c.snippet?.country || "GLOBAL"
       }
 
       if (
-        title.toLowerCase().includes("reaction")
-      ) {
+  title.toLowerCase().includes("reaction")
+) {
 
-        score += 10;
-		
-	  }
-      
+  score += 10;
+
+}
+
 const status = calculateStatus({
 
-score,
-velocity,
-rankChange,
-rank: index + 1
+  score,
+  velocity,
+  rankChange,
+  rank: index + 1
 
 });
 
 const aiDetection = detectSuspiciousActivity({
 
-views,
-likes,
-comments,
-velocity,
-subscriberCount:
-channelInfo.subs || 0,
-ageHours
+  views,
+  likes,
+  comments,
+  velocity,
+  subscriberCount:
+  channelInfo.subs || 0,
+  ageHours
 
 });
 
-		  
-      }
+		rawVideos.push({
 
+		id: video.id,
+		title: video.snippet.title
+		
+		});
+
+
+	  
       // ===============================
       // RETURN OBJECT
       // ===============================
@@ -534,7 +545,8 @@ ageHours
 		}
 
 
-
+		const duplicateIds =
+		detectDuplicateVideos(rawVideos);
 	  
     // ===============================
     // SNAPSHOT
@@ -551,7 +563,10 @@ ageHours
       region,
 
       results:
-        analyzed
+        analyzed,
+	
+		duplicateVideos:
+		duplicateIds
 
     };
 
