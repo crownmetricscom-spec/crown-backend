@@ -55,6 +55,10 @@ const {
   calculateMomentum
 } = require("./engines/momentumEngine");
 
+const {
+  calculateLifecycle
+} = require("./engines/lifecycleEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -450,7 +454,14 @@ const momentum = calculateMomentum({
 
 });
 
+const lifecycle = calculateLifecycle({
 
+  ageHours,
+  velocity,
+  momentum,
+  rankChange
+
+});
 		
 const aiDetection = detectSuspiciousActivity({
 
@@ -524,6 +535,8 @@ const aiDetection = detectSuspiciousActivity({
 		),
 
 		 momentum, 
+
+		lifecycle,
 		  
 		velocity:
 		Math.floor(velocity),
@@ -861,7 +874,14 @@ const momentum = calculateMomentum({
 
 });
 
+const lifecycle = calculateLifecycle({
 
+  ageHours,
+  velocity,
+  momentum,
+  rankChange: 0
+
+});
 		  
 		const status = calculateStatus({
 		
@@ -917,6 +937,7 @@ const momentum = calculateMomentum({
             Math.floor(velocity),
 
 			momentum,
+			lifecycle,
 
           previousRank:
             null,
