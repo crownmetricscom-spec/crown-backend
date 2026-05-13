@@ -29,6 +29,11 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
+const {
+  calculateScore,
+  calculateStatus
+} = require("./engines/scoreEngine");
+
 const app = express();
 
 const API_KEYS = [
