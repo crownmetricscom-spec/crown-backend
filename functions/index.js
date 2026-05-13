@@ -404,7 +404,7 @@ c.snippet?.country || "GLOBAL"
 
         score += 10;
 
-      }
+      
 const status = calculateStatus({
 
 score,
@@ -779,76 +779,26 @@ c.snippet?.country || "GLOBAL"
         const velocity =
           views / Math.max(ageHours, 1);
 
-        let score = Math.floor(
+		 let score = calculateScore({
+		
+		views,
+		likes,
+		comments,
+		ageHours
+		
+		});
+		
+		const status = calculateStatus({
+		
+		score,
+		velocity,
+		rankChange: 0,
+		rank: index + 1
+		
+		});
 
-          (
 
-            (
-              likes +
-              (comments * 2)
-            )
-
-            /
-
-            (views || 1)
-
-          )
-
-          *
-
-          10000
-
-          *
-
-          (
-
-            ageHours < 24
-              ? 1.5
-              : ageHours < 72
-              ? 1.2
-              : 1
-
-          )
-
-        );
-
-        let status = "stable";
-
-        if (
-          score >= 900 &&
-          velocity >= 30000
-        ) {
-
-          status = "viral";
-
-        }
-
-        else if (
-          score >= 700 &&
-          velocity >= 15000
-        ) {
-
-          status = "hot";
-
-        }
-
-        else if (
-          velocity >= 40000 &&
-          index >= 15
-        ) {
-
-          status = "hidden_gem";
-
-        }
-
-        else if (
-          index === 0 &&
-          score >= 800
-        ) {
-
-          status = "champion";
-
-        }
+        
 
         analyzed.push({
 
