@@ -510,10 +510,10 @@ const aiDetection = detectSuspiciousActivity({
 		status,
 		
 		label:
-getLabel(status),
-
-icon:
-getIcon(status),
+		getLabel(status),
+		
+		icon:
+		getIcon(status),
 
 		  
 		ageInHours:
