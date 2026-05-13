@@ -405,63 +405,15 @@ c.snippet?.country || "GLOBAL"
         score += 10;
 
       }
+const status = calculateStatus({
 
-      // ===============================
-      // TREND STATUS ENGINE
-      // ===============================
+score,
+velocity,
+rankChange,
+rank: index + 1
 
-      let status = "stable";
+});
 
-      if (
-        score >= 900 &&
-        velocity >= 30000 &&
-        rankChange >= 2
-      ) {
-
-        status = "viral";
-
-      }
-
-      else if (
-        score >= 700 &&
-        velocity >= 15000
-      ) {
-
-        status = "hot";
-
-      }
-
-      else if (
-        rankChange >= 3
-      ) {
-
-        status = "rising";
-
-      }
-
-      else if (
-        rankChange <= -3
-      ) {
-
-        status = "falling";
-
-      }
-
-      else if (
-        velocity >= 40000 &&
-        index >= 15
-      ) {
-
-        status = "hidden_gem";
-
-      }
-
-      else if (
-        index === 0 &&
-        score >= 800
-      ) {
-
-        status = "champion";
 
       }
 
