@@ -34,6 +34,10 @@ const {
   calculateStatus
 } = require("./engines/scoreEngine");
 
+const {
+  detectSuspiciousActivity
+} = require("./engines/aiDetectionEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -403,7 +407,8 @@ c.snippet?.country || "GLOBAL"
       ) {
 
         score += 10;
-
+		
+	  }
       
 const status = calculateStatus({
 
@@ -414,7 +419,19 @@ rank: index + 1
 
 });
 
+const aiDetection = detectSuspiciousActivity({
 
+views,
+likes,
+comments,
+velocity,
+subscriberCount:
+channelInfo.subs || 0,
+ageHours
+
+});
+
+		  
       }
 
       // ===============================
@@ -502,8 +519,16 @@ rank: index + 1
 		channelInfo.subs || 0,
 		
 		videoCount:
-		channelInfo.videos || 0
+		channelInfo.videos || 0,
+
+				
+		suspiciousScore:
+		aiDetection.suspiciousScore,
 		
+		suspiciousLabel:
+		aiDetection.suspiciousLabel
+
+		  
 		});
 		
 		}
