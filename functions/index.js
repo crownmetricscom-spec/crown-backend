@@ -51,6 +51,10 @@ const {
   calculateVelocity
 } = require("./engines/velocityEngine");
 
+const {
+  calculateMomentum
+} = require("./engines/momentumEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -437,6 +441,17 @@ const status = calculateStatus({
 
 });
 
+
+const momentum = calculateMomentum({
+
+  velocity,
+  rankChange,
+  ageHours
+
+});
+
+
+		
 const aiDetection = detectSuspiciousActivity({
 
   views,
@@ -507,9 +522,13 @@ const aiDetection = detectSuspiciousActivity({
 		  ),
 		  99
 		),
-		
+
+		 momentum, 
+		  
 		velocity:
 		Math.floor(velocity),
+
+		  
 		
 		previousRank,
 		
@@ -832,7 +851,18 @@ c.snippet?.country || "GLOBAL"
 		ageHours
 		
 		});
-		
+
+
+const momentum = calculateMomentum({
+
+  velocity,
+  rankChange: 0,
+  ageHours
+
+});
+
+
+		  
 		const status = calculateStatus({
 		
 		score,
@@ -885,6 +915,8 @@ c.snippet?.country || "GLOBAL"
 
           velocity:
             Math.floor(velocity),
+
+			momentum,
 
           previousRank:
             null,
