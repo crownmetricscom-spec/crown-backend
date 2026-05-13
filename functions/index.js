@@ -42,6 +42,11 @@ const {
   detectDuplicateVideos
 } = require("./engines/duplicateDetectionEngine");
 
+const {
+  getLabel,
+  getIcon
+} = require("./engines/labelEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -505,22 +510,10 @@ const aiDetection = detectSuspiciousActivity({
 		status,
 		
 		label:
-		status === "viral" ? "Viral" :
-		status === "hot" ? "Hot" :
-		status === "champion" ? "Champion" :
-		status === "hidden_gem" ? "Insider" :
-		status === "rising" ? "Peak" :
-		status === "falling" ? "Drop" :
-		"Stable",
-		
-		icon:
-		status === "viral" ? "🚀" :
-		status === "hot" ? "🔥" :
-		status === "champion" ? "👑" :
-		status === "hidden_gem" ? "💎" :
-		status === "rising" ? "▲" :
-		status === "falling" ? "▼" :
-		"●",
+getLabel(status),
+
+icon:
+getIcon(status),
 
 		  
 		ageInHours:
