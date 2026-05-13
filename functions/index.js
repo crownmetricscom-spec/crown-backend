@@ -47,6 +47,10 @@ const {
   getIcon
 } = require("./engines/labelEngine");
 
+const {
+  calculateVelocity
+} = require("./engines/velocityEngine");
+
 const app = express();
 
 const API_KEYS = [
@@ -365,8 +369,12 @@ c.snippet?.country || "GLOBAL"
       // VELOCITY ENGINE
       // ===============================
 
-      const velocity =
-        views / Math.max(ageHours, 1);
+      const velocity = calculateVelocity({
+
+		  views,
+		  ageHours
+		
+		});
 
       // ===============================
       // SCORE ENGINE
@@ -809,8 +817,12 @@ c.snippet?.country || "GLOBAL"
             Date.now() - publishedDate
           ) / 3600000;
 
-        const velocity =
-          views / Math.max(ageHours, 1);
+        const velocity = calculateVelocity({
+
+		  views,
+		  ageHours
+		
+		});
 
 		 let score = calculateScore({
 		
