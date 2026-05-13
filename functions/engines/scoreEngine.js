@@ -48,7 +48,7 @@ function calculateStatus({
 score,
 velocity,
 rankChange,
-index
+rank
 }) {
 
 let status = "stable";
@@ -98,7 +98,7 @@ status = "falling";
 
 else if (
 velocity >= 40000 &&
-index >= 15
+rank >= 15
 ) {
 
 ```
@@ -108,7 +108,7 @@ status = "hidden_gem";
 }
 
 else if (
-index === 0 &&
+rank === 1 &&
 score >= 800
 ) {
 
