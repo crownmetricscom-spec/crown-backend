@@ -358,38 +358,17 @@ c.snippet?.country || "GLOBAL"
       // SCORE ENGINE
       // ===============================
 
-      let score = Math.floor(
+		let score = calculateScore({
+		
+		views,
+		likes,
+		comments,
+		ageHours,
+		rankChange,
+		title
+		
+		});
 
-        (
-
-          (
-            likes +
-            (comments * 2)
-          )
-
-          /
-
-          (views || 1)
-
-        )
-
-        *
-
-        10000
-
-        *
-
-        (
-
-          ageHours < 24
-            ? 1.5
-            : ageHours < 72
-            ? 1.2
-            : 1
-
-        )
-
-      );
 
       // ===============================
       // BONUS SIGNALS
