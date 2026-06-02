@@ -684,15 +684,22 @@ const prediction = calculatePrediction({
       JSON.stringify(snapshot, null, 2)
     );
 	
-	// FIREBASE LIVE SAVE
+// ===============================
+// FIREBASE LIVE SAVE (FRONTEND COMPATIBLE)
+// ===============================
 
-		const updates = {};
-		
-		updates[
-		  `snapshots_live/${region}/metadata/lastUpdate`
-		] = Date.now();
-		
-		analyzed.forEach((song, index) => {
+const updates = {};
+updates[`snapshots_live/${region}/metadata/lastUpdate`] = Date.now();
+
+analyzed.forEach((song, index) => {
+  // SONG GLOBAL SPEICHERN (Für die Detail-Ansicht in Blogger)
+  updates[`songs_by_region/${region}/${song.id}`] = song;
+
+  // RANKING SPEICHERN (Für die Tabellen-Reihenfolge in Blogger)
+  updates[`snapshots_live/${region}/rankings/${index + 1}`] = song.id;
+});
+
+await db.ref().update(updates);
 		
 		  // SONG GLOBAL SPEICHERN
 		  updates[
@@ -721,9 +728,7 @@ const prediction = calculatePrediction({
 
 	});
 	
-	
-	
-	
+			
 	const historyFileName =
   `${region}-${Date.now()}.json`;
 
